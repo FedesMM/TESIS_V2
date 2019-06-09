@@ -1,0 +1,369 @@
+#PSEUDOCODIGOS
+
+Procedimiento factibilizar(maxRepeticiones, maxprofundidad)
+	copiaSolucion<- solucion;
+	Para 	repeticion <-0 Hasta repeticion=maxRepeticiones Y !copiaSolucion.esFactible Con Paso 1 Hacer
+		Para 	profundidad <-0 Hasta profundidad=maxProfundidad Y !copiaSolucion.esFactible Con Paso 1 Hacer
+			copia.factibilizarCantUsos;
+			copia.factibilizarProductividad;
+		Fin Para
+		Si copiaSolucion.esFactible Entonces
+			DevolvercopiaSolucion;
+		Fin Si
+		copiaSolucion<-solucion;
+	Fin Para
+Fin Procedimiento
+
+
+Procedimiento FactibilizarCantUsos (solucion)
+	Para Cada productor en Productores Hacer
+		Para Cada estacion en Estaciones Hacer
+			usosDelProductorEstaEstacion<- solucion.usosDelProductorPorEstacion(productor, estacion); //Devuelve una lista deshordenada de usos
+			//Si me faltan usos
+			Si usosDelProductorEstaEstacion.tamaño < MinimaCantUsos Entonces
+				cantCambios<-MinimaCantUsos - usosDelProductorEstaEstacion.tamaño;
+				Para cambios<-0 Hasta cantCambios Con Paso 1 Hacer
+					//Sorteo entre los pixeles del productor el pixel con menos EstacioneDeUso de un uso con un Uso usado al menos dos veces.
+					pixelACambiar<-sortearPixelDelProductorParaFactibilizarPorUsos(estacion,productor);
+					estacionDelUso<- solucion.Matriz(pixel,estacion)%100;
+					Para intento<-0 Hasta cantIntentos O solucion.esFactible Con Paso 1 Hacer
+						//Cambio en el pixel de esta estacion en adelante por un uso que aun no tenga
+						solucion.corregirPixelSegunCantUsos(pixelACambiar, estacion-estacionDelUso,usosDelProductorEstaEstacion);
+					Fin Parad
+				Fin Para
+			//Si me sobran usos
+			Si No Si usosDelProductorEstaEstacion >  MaximaCantUsos Entonces
+				cantCambios<- usosDelProductorEstaEstacion.tamaño -MinimaCantUsos;
+				//Armo una lista de usos a conservar
+				usosAConservar<- vacia;
+				//Agrego usos heredados
+				Para Cada pixel en productor.pixelesDelProductor Hacer
+					estacionOriginal<-estacion- solucion.Matriz(pixel,estacion)%100;
+					posibleUso<- solucion.Matriz(pixel,estacion)/100;
+					Si estacionOriginal<0  Y !usosAConservar.contiene(posibleUso) Entonces
+						usosAConservar.agregar(posibleUso)
+					Fin Si
+				Fin Para
+				//Chequeo que tenga una instancia factible
+				Si usosAConservar.tamaño > MaximaCantUsos Entonces
+					imprimir(Instancia no valida!!!);
+					Devolver falso;
+				Fin Si
+				//Agrego usos no heredados
+				Para Cada uso en usosDelProductorEstaEstacion Hacer
+					Si !usosAConservar.contiene(uso) Y usoAConservar.tamaño < MaximaCantUsos Entonces
+						usoAConservar.agregar(uso);
+					Fin Si
+				Fin Para
+				//Recorro los pixeles del productor corrigiendo los que tengan usos fuera de la lista
+				Para Cada pixel en productor.PixelesDelProductor Hacer
+					estacionDelUso<-solucion.Matriz(pixel,estacion)%100;
+					Para intento<-0 Hasta cantIntentos O solucion.esFactible Con Paso 1 Hacer
+						solucion.corregirPixelSegunCantUsos(pixelACambiar, estacion-estacionDelUso,usoAConservar);
+				Fin Para
+			Fin Si
+		Fin Para
+	Fin Para
+	Devolver verdadero;
+Fin Prodcedimiento
+
+Procedimiento sortearPixelDelProductorParaFactibilizarPorUsos(estacion,productor)
+	minEstacion<-CantEstaciones;
+	listaPixelACambiar<- vacio;
+	Para Cada pixel en productor.pixelesDelProductor Hacer
+		usoDelPixel<- solucion.Matriz(pixel,estacion)/100;
+		estacionDelUso<-solucion.Matriz(pixel,estacion)%100;
+			//Si es un uso, usado al menos 2 veces en esta estacion por este productor
+			Si solucion.cantUsosPorEstacionParaCadaProductor(usoDelPixel,estacion,productor) >1 Entonces		
+				Si estacionDelUso<minEstacion Entonces
+					minEstacion= estacionDelUso;
+					listaPixelACambiar<- vacio;
+					listaPixelACambiar.agregar(pixel);
+				Si	No Si estacionDelUso = minEstacion Entonces Y !listaPixelesACambiar.contiene(pixel) Entonces
+					listaPixelesACambiar.agregar(pixel);
+				Fin Si
+			Fin Si
+	Fin Para
+	//Si tengo pixeles en la lista devuelvo uno al azar
+	Si listaPixelesACambiar.tamaño >1 Entonces
+		Devolver  listaPixelesACambiar.obtener(EnteroAleatorio(listaPixelesACambiar.tamaño));
+	//Si no tengo devuelvo uno cualquiera del productor
+	Si No Entonces
+		Devolver productor.pixelesDelProductor.obtener(EnteroAleatorio(productor.pixelesDelProductor.tamaño));
+	Fin Si
+Fin Procedimiento
+
+Procedimiento corregirPixelSegunCantUsos(pixel, estacionOriginal,usoDelProductorEstaEstacion)
+	estacion<-estacionOriginal;
+	productor<-pixel.productor;
+	//Advierto si tengo una instancia no valida
+	Si estacionOriginal<0 Entonces
+		imprimir(Instancia no valida!!!);
+		Devolver falso;
+	//Si tengo un uso heredado consigo el siguiente de el uso original
+	Si No Si estacionOriginal = 0 Entonces
+		usoOriginal=pixel.UsoOriginal;
+		estacion=pixel.duracionOriginal;
+		//Si tengo usos siguiente posibles sorteo uno
+		Si usoOriginal.tengoSiguiente(usosDelProductorEstaEstacion) Entonces
+			usoACargar<-iguienteUsoRuletaFosforoCumpleCantUsos(usoOriginal, usosDelProductorEstaEstacion, productor);
+		Si No Entonces
+			Devolver falso;
+		Fin Si
+	//Si no tengo un uso heredado consigo el siguiente a partir de lo que tenia en la estacion previa
+	Si No Entonces
+		usoOriginal<-matriz(pixel,estacionOriginal-1)/100;
+		//Si tengo usos siguiente posibles sorteo uno
+		Si usoOriginal.tengoSiguiente(usosDelProductorEstaEstacion) Entonces
+			usoACargar<-iguienteUsoRuletaFosforoCumpleCantUsos(usoOriginal, usosDelProductorEstaEstacion, productor);
+		Si No Entonces
+			Devolver falso;
+		Fin Si
+	Fin Si
+	//Recorro el pixel corrigiendo sus estaciones
+	Mientras estacion < CantEstaciones Hacer
+		estacionUsoACargar<-0;
+		Mientras estacionUsoACargar < usoACargar.duracion Y (estacionUsoACargar+Estacion) < CantEstaciones Hacer
+			estacionActual<-estacionUsoACargar + estacion;
+			//Si se va a cambiar el el plan
+			Si solucion.matriz(pixel,estacionActual) != (100*usoACargar+estacionUsoACargar) Entonces
+				//Calculo los valores del uso a borrar
+				usoABorrar<-solucion.matriz(pixel,estacionActual)/100;
+				estacionDeUsoABorrar<-solucion.matriz(pixel,estacionActual)%100;
+				//Modifico el plan
+				solucion.matriz(pixel,estacionActual)<-100*usoACargar+estacionUsoACargar;
+				//Actualizo los valores asociados al plan
+				/Actualizo la cantidad de usos
+        solucion.cantUsosPorEstacionParaCadaProductor(usoABorrar,estacionActual,productor)--;
+        solucion.cantUsosPorEstacionParaCadaProductor(usoACargar,estacionActual,productor)++;
+        //Actualizo la productividad del productor due;o del pixel segun la superficie del pixel y la productividad del uso para la estacion del uso
+        solucion.productivdadProductores(productor,estacionActual) <- solucion.productivdadProductores(productor,estacionActual)
+                +pixel.superficie *(-usoABorrar.productividad(estacionDeUsoABorrar) + usoACargar.productividad(estacionUsoACargar));
+        //Actualizo lo que aporta el uso al fosforo total en esta estacion
+        solucion.fosforo<- solucion.fosforo 
+        				+pixel.superficie *(-usoABorrar.fosforoEstacion(estacionDeUsoABorrar) + usoACargar.fosforoEstacion(estacionUsoACargar));                
+			Fin Si
+			estacionUsoACargar++;
+		Fin Mientras	
+		estacion=estacion+estacionUsoACargar;
+		Si estacion<CantEstaciones Entonces
+			usoACargar<-siguienteUsoRuletaFosforoCumpleCantUsos(usoACargar,usosDelProductorPorEstacion(productor, estacion),productor);
+		Fin Si
+	Fin Mientras
+	Devolver verdadero;
+Fin Procedimiento
+
+
+
+Procedimiento siguienteUsoRuletaFosforoCumpleCantUsos(usoOriginal, usosDelProductorEstaEstacion, productor)
+	//Dado un uso y una lista de usos ya usados, devuelvo un uso sorteado ruleta por fosforo  que respete la restriccion de usos
+	listaDeCandidatos<- armarListaDeUsosCandidadtos(usosDelProductorEstaEstacion);
+	//Si tengo un elemento lo devuelvo
+	Si listaDeCandidatos.tamaño=1 Entonces
+		Devolver listaDeCandidatos.primero;
+	//Si tengo mas de uno sorte proporcionalmente al fosforo que aportan
+	Si No
+		fosforoTotal<-calculoFosforoTotal(listaDeCandidatos);
+		fosforoSorteado<- FloatAleatorio(0,fosforoTotal);
+		fosforoAcumulado<-0;
+		//Corroboro a que uso corresponde
+		Para Cada uso en listaDeCandidatos Hacer
+			fosforoAcumulado+=uso.fosforo;
+			Si fosforoSorteado<fosforoAcumulado
+				siguienteUso<-uso;
+				salgo del Para Cada;
+			Fin Si
+		Fin Para
+		devuelvo siguienteUso;
+	Fin Si
+Fin Procedimiento
+
+
+
+Procedimiento factibilizarProductividad()
+	Para Cada productor en Productores Hacer
+		maxCambios<-productor.pixelesDelProductor.tamaño;
+		Para Cada estacion en Estaciones Hacer
+			usosDelProductorPorEstacion= solucion.usosDelProductorPorEstacion(productor, estacion);
+			Si solucion.productividadProductores(producto,estacion)/productor.areaTotal < productor.restriccionProductividadPorEstacion(estacion)  Entonces
+				Para cambios<-0 Hasta maxCambios O solucion.restriccionProduccion.cumpleRestriccion Con Paso 1 Hacer
+					pixelACambiar<-sortearPixelDelProductorParaFactibilizarProduccion(estacion,productor);
+					estacionDelUso<- solucion.Matriz(pixel,estacion)%100;
+					solucion.corregirPixelSegunProductividad(pixelACambiar, estacion-estacionDelUso, usosDelProductorEstaEstacion);
+				Fin Para
+			Fin Si
+		Fin Para
+	Fin Para	
+FIn Procedimiento
+
+Peocedimiento sortearPixelDelProductorParaFactibilizarProduccion(estacion,productor)
+
+	//Calculo la productividad total de esta estacion
+	produccionTotal<- 0;
+	Para Cada pixel en productor.PixelesDelProductor Hacer
+		uso <- solucion.matriz(pixel,estacion)/100;
+    estacionUso <- matriz(pixel,estacion)%100;
+    produccionTotal+= uso.productividad(estacionUso);
+	Fin Para
+	//Cargo los pixeles no heredados, calculo sus productividades invertidas y la productividad invertida total
+	posiblePixel<-vacio;
+	produccionInvertida<-vacio;
+	produccionInvertidaTotal<-0;
+	Para Cada pixel en productor.PixelesDelProductor Hacer
+		uso <- solucion.matriz(pixel,estacion)/100;
+    estacionUso <- matriz(pixel,estacion)%100;
+    Si estacion-estacionUso Entonces
+    	posiblePixel.agregar(pixel);
+    	produccionInvertida.agregar(pixel, produccionTotal-uso.productividad(estacionUso))
+    	produccionInvertidaTotal+=produccionInvertida.obtener(pixel);
+    Fin Si
+	Fin Para
+	
+	acumulado<-0;
+	//Si tengo pixeles que pudeo modificar sorteo entre ellos el pixel a Devolver
+	Si posiblePixel.tamaño>0 Entonces
+		//Si tengo productividad deuelvo un pixel sorteado segun una ruleta de la productividad invertida total
+		Si produccionTotal>0 Entonces
+			sorteo<- FloatAleatorio(0,produccionInvertidaTotal);
+			Para Cada pixel en productor.pixelesDelProductor Hacer
+				acumulado +=produccionInvertida.obtener(pixel);
+				Si sorteado < acumulado Entonces
+					return pixel;
+				Fin Si
+			Fin Para
+		//Si no tengo productividad devuelvo un pixel cualquiera del productor
+		Si No
+			return posiblePixel.obtener(EnteroAleatorio(productor.posiblePixel.tamaño));
+		Fin Si
+	Si No
+		imprimir(No hay pixel que sortear en la estacion $estacion para el productor $productor);
+		return 0;
+	Fin Si
+Fin Procedimiento
+
+Peocedimiento corregirPixelSegunProductividad(pixelACambiar, estacionOriginal, usosDelProductorEstaEstacion);
+	//Si tengo que factibilizar desde una estacion heredada devuelvo que no es posible corregir el pixel
+	Si estacionOriginal>0 Entonces
+		Return falso;
+	//Si tengo que factibilizar desde la estacion cero, sorteo un siguiente uso segun el usoOriginal
+	Si No Si estacionOriginal=0 Entonces
+		usoOriginal <-pixelACambiar.usoOriginal;
+		estacion <- pixelACambiar.duracionOriginal;
+		//Si hay un siguiente posible que no rompa la factibilidad de Cantidad de Usos
+		Si usoOriginal.tengoSiguiente(usosDelProductorEstaEstacion) Entonces
+			usoACargar <- siguienteUsoRuletaProduccionCumpleCantUsos(usoOriginal, usosDelProductorEstaEstacion, pixelACambiar.productor);
+		//Si no tengo uso siguiente devuelvo que no es posible corregir el pixel
+		Si No Entonces
+			Devolver falso;
+		Fin Si
+	//Si tengo que factibilizar desde una estacion posterior a la primera, sorteo segun el suo de la estacion previa
+	Si No
+		//Si hay un siguiente posible que no rompa la factibilidad de Cantidad de Usos
+		Si usoOriginal.tengoSiguiente(usosDelProductorEstaEstacion) Entonces
+			usoPrevio<-solucion.matriz(pixel,estacionOriginal-1)/100
+			usoACargar <- siguienteUsoRuletaProduccionCumpleCantUsos(usoPrevio, usosDelProductorEstaEstacion, pixelACambiar.productor);
+		//Si no tengo uso siguiente devuelvo que no es posible corregir el pixel
+		Si No Entonces
+			Devolver falso;
+		Fin Si
+	Fin Si
+	//Corrijo el pixel hasta el final
+	Mientras estacion<CantEstaciones Hacer
+		estacionUsoACargar<-0;
+		Mientras estacionUsoACargar<usoACargar.duracion && estacion+estacionUsoACargar<CantEstaciones Hacer
+			estacionActual<-estacion+estacionUsoACargar;
+			Si solucion.matriz(pixel,estacionActual) != (100*usoACargar+estacionesDeUsoACargar) Hacer
+				//Calculo los valores del uso a borrar
+				usoABorrar<-solucion.matriz(pixel,estacionActual)/100;
+				estacionDeUsoABorrar<-solucion.matriz(pixel,estacionActual)%100;
+				//Modifico el plan
+				solucion.matriz(pixel,estacionActual)<-100*usoACargar+estacionUsoACargar;
+				//Actualizo los valores asociados al plan
+				/Actualizo la cantidad de usos
+        solucion.cantUsosPorEstacionParaCadaProductor(usoABorrar,estacionActual,productor)--;
+        solucion.cantUsosPorEstacionParaCadaProductor(usoACargar,estacionActual,productor)++;
+        //Actualizo la productividad del productor due;o del pixel segun la superficie del pixel y la productividad del uso para la estacion del uso
+        solucion.productivdadProductores(productor,estacionActual) <- solucion.productivdadProductores(productor,estacionActual)
+                +pixel.superficie *(-usoABorrar.productividad(estacionDeUsoABorrar) + usoACargar.productividad(estacionUsoACargar));
+        //Actualizo lo que aporta el uso al fosforo total en esta estacion
+        solucion.fosforo<- solucion.fosforo 
+        				+pixel.superficie *(-usoABorrar.fosforoEstacion(estacionDeUsoABorrar) + usoACargar.fosforoEstacion(estacionUsoACargar));      
+			Fin Si
+			estacionUsoACargar++
+		Fin Mientras
+		estacion=estacion+estacionUsoACargar;
+		Si estacion<CantEstaciones Entonces
+			usoACargar<-iguienteUsoRuletaProduccionCumpleCantUsos(usoACargar,usosDelProductorPorEstacion(productor, estacion),productor);
+		Fin Si
+	Fin Mientras
+	Devolver verdadero;
+Fin Procedimiento
+
+Procedimiento siguienteUsoRuletaProduccionCumpleCantUsos(usoOriginal, usosDelProductorEstaEstacion, productor)
+	//Dado un uso y una lista de usos ya usados, devuelvo un uso sorteado ruleta por productividad  que respete la restriccion de usos
+	listaDeCandidatos<- armarListaDeUsosCandidadtos(usosDelProductorEstaEstacion);
+	//Si tengo un elemento lo devuelvo
+	Si listaDeCandidatos.tamaño=1 Entonces
+		Devolver listaDeCandidatos.primero;
+	//Si tengo mas de uno sorte proporcionalmente a la produccion que aportan
+	Si No
+		productividadTotal<-calculoProductividadTotal(listaDeCandidatos);
+		productividadSorteado<- FloatAleatorio(0,productividadTotal);
+		productividadAcumulado<-0;
+		//Corroboro a que uso corresponde
+		Para Cada uso en listaDeCandidatos Hacer
+			productividadAcumulado+=uso.productividad;
+			Si productividadSorteado<productividadAcumulado
+				siguienteUso<-uso;
+				salgo del Para Cada;
+			Fin Si
+		Fin Para
+		devuelvo siguienteUso;
+	Fin Si
+
+Fin Procedimiento
+
+Procedimiento armarListaDeUsosCandidadtos(usosDelProductorEstaEstacion)
+	listaDeCandidatos<- vacio;
+	//Dado un uso y una lista de usos ya usados, devuelvo un uso sorteado ruleta por fosforo  que respete la restriccion de usos
+	//Si tengo menos del minimo sorteo ruleta con los siguientes del usoOriginal que NO estan en la lista
+	Si usosDelProductorEstaEstacion.tamaño< MinimaCantUsos Hacer
+		Para Cada uso en usoOriginal.siguientesUsos Hacer
+			Si !usosDelProductorEstaEstacion.contiene(uso) Entonces
+				listaDeCandidatos.agregar(uso);
+			Fin Si
+		Fin Para
+	//Si tengo mas del minimo pero menos del maximo sorteo ruleta con TODOS los siguientes del usoOriginal
+	Si No Si usosDelProductorEstaEstacion.tamaño< MaximaCantUsos Hacer
+		listaDeCandidatos<-usoOriginal.siguientesUsos;
+	//Si tengo mas que el maximo  sorteo ruleta con los siguiente del uso Original que SI estan en la lista
+	Si No Hacer
+		Para Cada uso en usoOriginal.siguientesUsos Hacer
+			Si usosDelProductorEstaEstacion.contiene(uso) Y listaDeCandidatos.tamaño<MaximaCantUsos Entonces
+				listaDeCandidatos.agregar(uso);
+			Fin Si
+		Fin Para
+	Fin Si
+	Devolver listaDeCandidatos;
+Fin Procedimiento
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
