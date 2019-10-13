@@ -1,3 +1,5 @@
+import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
+
 import java.io.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -31,11 +33,10 @@ public class Main {
 
 
         //GENERADOR DE .DAT
-
-
+        Main.resolverProductor();
 
         //Main.resolverProductores();
-        Main.generarMejorSolucion();
+        //Main.generarMejorSolucion();
         //Main.testCargarUsos();
         //Main.testInstancias();
         //Main.testFactibilizarProductividad();
@@ -50,7 +51,8 @@ public class Main {
         int cantidadSoluciones = 0, datos;
         Solucion solucion;
         Scanner reader = new Scanner(System.in);
-
+        Constantes.maximaCantidadIncumplimientoProductividadMinimaEstacion=Constantes.cantEstaciones;
+        Constantes.maximoIncumplimientoUsosDistintos=Constantes.cantEstaciones;
 
         System.out.print("Cantidad de soluciones a generar : ");
         cantidadSoluciones = reader.nextInt();
@@ -58,6 +60,20 @@ public class Main {
         System.out.print("Numero de productor: ");
         datos = reader.nextInt();
         Constantes.pixeles=Pixel.cargarPixelesDeProductor("Instancias/productores/productor"+datos+".in",datos);
+
+        //PRUEBAS PESOS PROBLEMA
+        //Constantes.definirPesosProblema(1f,1f,1f);
+        //Constantes.pesosProblema.put("fosforo",1F);
+
+        Constantes.imprimirPesos(Constantes.pesosProblema);
+        Solucion a = Solucion.crearSolucion();
+        a.imprimirCriterios();
+        Solucion b = Solucion.crearSolucion();
+        b.imprimirCriterios();
+        Constantes.pesosProblema=Constantes.actualizarPesos(a, b, Constantes.pesosProblema);
+        Constantes.imprimirPesos(Constantes.pesosProblema);
+        datos = reader.nextInt();
+
 
         solucion=Main.grasp(cantidadSoluciones, true, false);
 
@@ -73,16 +89,15 @@ public class Main {
     private static void resolverProductores() {
         Solucion solucion;
 
-        for (int iProductores = 13; iProductores <=42 ; iProductores++) {
+        for (int iProductores = 2; iProductores <=42 ; iProductores++) {
             Constantes.pixeles=Pixel.cargarPixelesDeProductor("Instancias/productores/productor"+iProductores+".in",iProductores);
-
             solucion=Main.grasp(100000, true, false);
 
             solucion.crearArchivoPlanificacion("soluciones/productor"+iProductores+".out");
             System.out.println("Mejor solucion:");
             System.out.println("\tFosforo: " + solucion.fosforo);
-            solucion.imprimirRestriccionProductividadMinimaEstacion();
-            solucion.imprimirRestriccionUsosDistintos();
+            //solucion.imprimirRestriccionProductividadMinimaEstacion();
+            //solucion.imprimirRestriccionUsosDistintos();
 
         }
 
@@ -396,31 +411,61 @@ public class Main {
     /**Ejecuta una busqueda GRASP con tantas repeticiones como maxCantidad, desplegando informacion segun verbose, y
      * contemplando la distanciaAlRio o no segun se lo especifique**/
     private static Solucion grasp(int maxCantidad, boolean verbose, boolean distanciaAlRio) {
-        Solucion nuevaSolucion, mejorSolucion;
+        Solucion nuevaSolucion, mejorSolucion, base;
         //System.out.println("GRASP-Cantidad maxima de Soluciones:");
         //int maxCantidad = 0;
         //Scanner reader = new Scanner(System.in);
         //maxCantidad = reader.nextInt();
+        base=Solucion.crearSolucion();
+        Constantes.mejorFosforo=base.clone();
+        Constantes.mejorCantIncumplimientoProductividad=base.clone();
+        Constantes.mejorCantIncumplimientoUsos=base.clone();
 
-        mejorSolucion = Main.LocalSearch(Solucion.crearSolucion(), distanciaAlRio);
+        //Incicializar pesosGRASP
+        Constantes.pesosGRASP=Constantes.inicializarPesos();
+
+        //Antonio
+        Constantes.cantGrasp =0;
+        Solucion.crearLogBusqueda();
+
+        mejorSolucion = Main.LocalSearch(base, distanciaAlRio);
         if (verbose) System.out.println("GRASP-Solucion Original: ");
         mejorSolucion.evaluarFuncionObjetivo();
 
         for (int iSoluciones = 0; iSoluciones < maxCantidad; iSoluciones++) {
+            //PARA ANTONIO
+            Constantes.cantGrasp++;
+
+
             if (verbose)System.out.println("GRASP-Iteracion: " + iSoluciones);
             nuevaSolucion=Solucion.crearSolucion();
             nuevaSolucion=Main.LocalSearch(nuevaSolucion, distanciaAlRio);
 
+            //Actualizar pesosGRASP Opcion Siempre
+            if (Constantes.actualizarPesosGRASPSiempre){
+                Constantes.pesosGRASP=Constantes.actualizarPesos(mejorSolucion,nuevaSolucion,Constantes.pesosGRASP);
+            }
             if (nuevaSolucion.evaluarFuncionObjetivo() < mejorSolucion.evaluarFuncionObjetivo()) {
+                //Actualizar pesosGRASP Opcion: Si Mejore
+                if (Constantes.actualizarPesosGRASPConMejora){
+                    Constantes.pesosGRASP=Constantes.actualizarPesos(mejorSolucion,nuevaSolucion,Constantes.pesosGRASP);
+                }
                 if (verbose)System.out.println("GRASP-Actualizo el mejor.");
                 if (verbose)System.out.println("GRASP-Mejor Solucion previa: "+ mejorSolucion.evaluarFuncionObjetivo());
 
                 mejorSolucion = nuevaSolucion.clone();
                 if (verbose)System.out.println("GRASP-Mejor Solucion actual: "+mejorSolucion.evaluarFuncionObjetivo());
             }else{
+                //Actualizar pesosGRASP Opcion: No mejore
+                if (Constantes.actualizarPesosGRASPSinMejora){
+                    Constantes.pesosGRASP=Constantes.actualizarPesos(mejorSolucion,nuevaSolucion,Constantes.pesosGRASP);
+                }
+                //mejorSolucion.agregarAvanceEnBusqueda(1F, 1F,  1F);
                 if (verbose)System.out.println("GRASP-Conservo el mejor anterior ");
                 if (verbose)System.out.println("GRASP-Mejor Solucion previa: "+ mejorSolucion.evaluarFuncionObjetivo());
             }
+
+
             if (verbose)System.out.println();
             if (verbose)System.out.println();
         }
@@ -481,18 +526,32 @@ public class Main {
     /**Se intenta modificar una solucion ejecutando fistImprove hasta que no mejore o llegue a la cantidad maxima
      * maxCantidadFI **/
     private static Solucion LocalSearch(Solucion solucion, boolean distanciaAlRio) {
-        boolean huboMejora = true;
-        int maxCantidadFI = Constantes.cantPixeles;//, UDprevia = 0;
+        int strikes = 0;
         float pesoFosforo = 1, pesoProductividad = 1, pesoCantUsos = 1;
         Solucion solucionOriginal = solucion.clone();
+        solucion.agregarAvanceEnBusqueda(pesoFosforo, pesoCantUsos,  pesoProductividad, strikes);
+
+        //Inicializar pesosLS
+        Constantes.pesosLS=Constantes.inicializarPesos();
+        System.out.print("GRASP "+Constantes.cantGrasp+" LS "+ Constantes.cantLS+ " iSoluciones:");
         //System.out.println("\tLS-Solucion Original:");
         //solucion.imprimirFuncionObjetivo();
 
         //Hasta llegar a la cantidad maxima de iteraciones o no tener mejora
-        for (int iSoluciones = 0; (iSoluciones < maxCantidadFI) && huboMejora; iSoluciones++) {
+        //Cambiar condicion de parada a una cantidad de ejecuciones minima y cierta cantidad de strikes
+        for (int iSoluciones = 0; (Constantes.minCantidadFI > iSoluciones)
+                || ((iSoluciones < Constantes.maxCantidadFI)&& (strikes<Constantes.strikesFI)); iSoluciones++) {
+            //|| (strikes<Constantes.strikesFI); iSoluciones++) {
+            Constantes.cantLS++;
+            System.out.print(iSoluciones+", ");
             //System.out.println("\tLS-Iteracion: " + (iSoluciones + 1));
             //Busco una mejora
-            solucion = Solucion.firstImprove(solucion, pesoFosforo, pesoProductividad, pesoCantUsos, distanciaAlRio);
+            solucion = Solucion.firstImprove(solucion, distanciaAlRio);
+            //Actualizar pesosLS Opcion: Siempre
+            if (Constantes.actualizarPesosLSSiempre){
+                Constantes.pesosLS=Constantes.actualizarPesos(solucionOriginal,solucion,Constantes.pesosLS);
+                solucion.agregarAvanceEnBusqueda(pesoFosforo, pesoCantUsos,  pesoProductividad,strikes);
+            }
             //Comparo valores de la mejora
             if (solucionOriginal.evaluarFuncionObjetivo(pesoFosforo, pesoProductividad, pesoCantUsos)
                     > solucion.evaluarFuncionObjetivo(pesoFosforo, pesoProductividad, pesoCantUsos)) {
@@ -501,22 +560,37 @@ public class Main {
                 //solucionOriginal.imprimirFuncionObjetivo(pesoFosforo, pesoProductividad, pesoCantUsos);
                 //solucion.imprimirFuncionObjetivo(pesoFosforo, pesoProductividad, pesoCantUsos);
                 //System.out.println();
-                //Actualizo mi solucion original a la acutal
-                solucionOriginal=solucion.clone();
+
+                //Actualizar pesosLS Opcion: Si mejore
+                if (Constantes.actualizarPesosLSConMejora){
+                    Constantes.pesosLS=Constantes.actualizarPesos(solucionOriginal,solucion,Constantes.pesosLS);
+                    solucion.agregarAvanceEnBusqueda(pesoFosforo, pesoCantUsos,  pesoProductividad,strikes);
+                }
+
                 //Actualizo pesos
                 pesoFosforo = Solucion.actualizarPesoFosforo(solucionOriginal, solucion, pesoFosforo);
                 pesoProductividad = Solucion.actualizarPesoProduccion(solucionOriginal, solucion, pesoProductividad);
                 pesoCantUsos = Solucion.actualizarPesoCantUsos(solucionOriginal, solucion, pesoCantUsos);
 
 
+                //Actualizo mi solucion original a la acutal
+                solucionOriginal=solucion.clone();
+
+
             } else {
+                //NO MEJORE
+                //Actualizar pesosLS Opcion: No mejore
+                if (Constantes.actualizarPesosLSSinMejora){
+                    Constantes.pesosLS=Constantes.actualizarPesos(solucionOriginal,solucion,Constantes.pesosLS);
+                    solucion.agregarAvanceEnBusqueda(pesoFosforo, pesoCantUsos,  pesoProductividad,strikes);
+                }
                 //No obtuve FirstImprovement
-                huboMejora = false;
+                strikes++;
             }
         }
 
-        /*
         System.out.println();
+        /*
         System.out.println();
         System.out.println("Solucion antes de los LS:");
         System.out.println("\tSolucion original (con pesos): " + solucionOriginal.evaluarFuncionObjetivo(pesoFosforo, pesoProductividad, pesoCantUsos));
@@ -526,7 +600,7 @@ public class Main {
         solucion.chequearRestricciones();
         solucion.imprimirFuncionObjetivo();
         */
-
+        Constantes.cantLS=1;
         return solucion;
 
 

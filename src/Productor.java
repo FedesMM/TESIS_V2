@@ -9,6 +9,7 @@ public class Productor {
     float[] restriccionProduccionEstacion;
     List<Integer> pixelesDelProductor;
     float areaTotal;
+    // TODO: agregar nombre de productor
 
     /**Devuelve el minimo entre la minima cantidad de usos y la cantidad de pixeles del productor**/
     public int getMinCantUsos(){

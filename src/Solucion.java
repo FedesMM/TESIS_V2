@@ -6,6 +6,7 @@ import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.text.DecimalFormat;
 
 import static java.lang.Math.min;
 
@@ -76,11 +77,14 @@ public class Solucion {
     //TODO: Parametriziar el aumento aumento como una variable de decision
     public static float actualizarPesoFosforo(Solucion solucionOriginal, Solucion solucion, float pesoFosforo) {
 
-        if (solucionOriginal.fosforo<=solucion.fosforo){
-            //No hubo mejora en fosforo actualizo el contador de cantidad de busquedas sin mejoras
+        if (solucionOriginal.fosforo<solucion.fosforo){
             return (pesoFosforo*1.1F);
-        }else{
+        }else if (solucionOriginal.fosforo>solucion.fosforo){
             return (pesoFosforo/1.1F);
+        }else if (solucionOriginal.fosforo==0) {
+            return 1.F;
+        }else{
+            return pesoFosforo;
         }
     }
 
@@ -88,11 +92,14 @@ public class Solucion {
     //TODO: Parametriziar el aumento aumento como una variable de decision
     public static float actualizarPesoProduccion(Solucion solucionOriginal, Solucion solucion, float pesoProduccion) {
 
-        if (-solucionOriginal.restriccionProductividadMinimaEstacion.maximoDesviacion<=-solucion.restriccionProductividadMinimaEstacion.maximoDesviacion){
-            //No hubo mejora en fosforo actualizo el contador de cantidad de busquedas sin mejoras
+        if (solucionOriginal.restriccionProductividadMinimaEstacion.cantIncumplimientos<solucion.restriccionProductividadMinimaEstacion.cantIncumplimientos){
             return (pesoProduccion*1.1F);
-        }else{
+        }else if (solucionOriginal.restriccionProductividadMinimaEstacion.cantIncumplimientos>solucion.restriccionProductividadMinimaEstacion.cantIncumplimientos){
             return (pesoProduccion/1.1F);
+        }else if (solucionOriginal.restriccionProductividadMinimaEstacion.cantIncumplimientos==0){
+            return 1.F;
+        }else{
+            return pesoProduccion;
         }
     }
 
@@ -100,11 +107,15 @@ public class Solucion {
     //TODO: Parametriziar el aumento aumento como una variable de decision
     public static float actualizarPesoCantUsos(Solucion solucionOriginal, Solucion solucion, float pesoCantUsos) {
 
-        if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos<=solucion.restriccionUsosDistintos.cantIncumplimientos){
+        if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos<solucion.restriccionUsosDistintos.cantIncumplimientos){
             //No hubo mejora en fosforo actualizo el contador de cantidad de busquedas sin mejoras
             return (pesoCantUsos*1.1F);
-        }else{
+        }else if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos>solucion.restriccionUsosDistintos.cantIncumplimientos){
             return (pesoCantUsos/1.1F);
+        }else if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos==0) {
+            return 1.F;
+        }else{
+            return pesoCantUsos;
         }
     }
 
@@ -121,6 +132,26 @@ public class Solucion {
 
 
         return solucion;
+    }
+
+    public static void crearLogBusqueda() {
+        //ACA
+        PrintWriter writer = null;
+        try {
+            FileWriter fileWriter = new FileWriter("Busqueda.csv");
+            writer = new PrintWriter(fileWriter);
+            //Imprimo la primera fila que marca las estaciones
+            writer.println("NumGRASP , NumLS , strikes, FuncionObjetivo Sin Pesos , FuncionObjetivo Con pesos , " +
+                    "Fosforo ,  Peso Fosforo, CantIncUsos, Peso CantIncUsos, CantIncProd, Peso CantIncProd");
+            writer.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**Convierte una solucion en un genoma**/
@@ -172,7 +203,7 @@ public class Solucion {
         float valor=0;
 
         valor= pesoFosforo * (this.fosforo /(Constantes.maximoIncumplimientoFosforo*this.areaTotal));
-        valor += - pesoProductividad * (this.restriccionProductividadMinimaEstacion.cantIncumplimientos /Constantes.maximaCantidadIncumplimientoProductividadMinimaEstacion);
+        valor += pesoProductividad * (this.restriccionProductividadMinimaEstacion.cantIncumplimientos /Constantes.maximaCantidadIncumplimientoProductividadMinimaEstacion);
         valor +=  pesoCantUsos * (this.restriccionUsosDistintos.cantIncumplimientos/ Constantes.maximoIncumplimientoUsosDistintos);
         return valor;
     }
@@ -182,7 +213,7 @@ public class Solucion {
     public float evaluarFuncionObjetivo(){
         float valor=0;
         valor= Constantes.pesoIncumplimientoFosforo * (this.fosforo /(Constantes.maximoIncumplimientoFosforo*this.areaTotal));
-        valor += -Constantes.pesoIncumplimientoProductividadMinimaEstacion * (this.restriccionProductividadMinimaEstacion.cantIncumplimientos /Constantes.maximaCantidadIncumplimientoProductividadMinimaEstacion);
+        valor += Constantes.pesoIncumplimientoProductividadMinimaEstacion * (this.restriccionProductividadMinimaEstacion.cantIncumplimientos /Constantes.maximaCantidadIncumplimientoProductividadMinimaEstacion);
         valor +=  Constantes.pesoIncumplimientoUsosDistintos * (this.restriccionUsosDistintos.cantIncumplimientos/ Constantes.maximoIncumplimientoUsosDistintos);
         return valor;
     }
@@ -357,6 +388,50 @@ public class Solucion {
     public static Solucion firstImprove(Solucion solucion, float pesoFosforo, float pesoProductividad, float pesoCantUsos, boolean distanciaAlRio){
         Solucion respaldoSolucion=solucion.clone();
         int pixelRandom;
+
+        for (int intentos = 0; intentos < Constantes.cantPixeles ; intentos++) {
+            //Sorteo cual cambiar
+            pixelRandom= Constantes.uniforme.nextInt(Constantes.cantPixeles-1);
+            //Cambio el pixel sorteado
+            solucion.cambiarPixel(pixelRandom, distanciaAlRio);
+            solucion.recalcular(false, distanciaAlRio);
+            //Chequeo contra los mejores
+            if(solucion.fosforo<Constantes.mejorFosforo.fosforo){
+                Constantes.mejorFosforo=solucion.clone();
+                //System.out.println("Cambio mejor fosforo por solucion con: "+ solucion.fosforo);
+            }
+            if(solucion.restriccionProductividadMinimaEstacion.cantIncumplimientos <
+                    Constantes.mejorCantIncumplimientoProductividad.restriccionProductividadMinimaEstacion.cantIncumplimientos){
+                Constantes.mejorCantIncumplimientoProductividad=solucion.clone();
+                //System.out.println("Cambio mejor productividad por solucion con: "+ solucion.restriccionProductividadMinimaEstacion.cantIncumplimientos);
+            }
+            if(solucion.restriccionUsosDistintos.cantIncumplimientos<
+                    Constantes.mejorCantIncumplimientoUsos.restriccionUsosDistintos.cantIncumplimientos){
+                Constantes.mejorCantIncumplimientoUsos=solucion.clone();
+                //System.out.println("Cambio mejor usos por solucion con: "+ solucion.restriccionUsosDistintos.cantIncumplimientos);
+            }
+
+            //En caso de que me sirva lo devuelvo
+            if (solucion.evaluarFuncionObjetivo(pesoFosforo,pesoProductividad,pesoCantUsos)< respaldoSolucion.evaluarFuncionObjetivo(pesoFosforo,pesoProductividad,pesoCantUsos)){
+                //System.out.println("\t\tFI-Exito, con cantidad de fallos: "+fallos);
+                return solucion;
+
+            }else{
+                //fallos++;
+                solucion=respaldoSolucion.clone();
+            }
+        }
+        //System.out.println("\t\tFI-Fracaso con cantidad de fallos: "+fallos);
+        return respaldoSolucion;
+    }
+
+    /**Intenta mejorar (tantas veces como la Cantidad de Pixeles) un pixel al azar de la solucion  segun ciertos pesos para los criterios de la funcion objetivo**/
+    public static Solucion firstImprove(Solucion solucion, boolean distanciaAlRio){
+        Solucion respaldoSolucion=solucion.clone();
+        int pixelRandom;
+        float pesoFosforo= Constantes.getPesoFosforoTotal();
+        float pesoProductividad=  Constantes.getPesoProductividadTotal();
+        float pesoCantUsos= Constantes.getPesoCantUsosTotal();
 
         for (int intentos = 0; intentos < Constantes.cantPixeles ; intentos++) {
             //Sorteo cual cambiar
@@ -1683,5 +1758,43 @@ public class Solucion {
 
     }
 
+    /**Agrega una entra al log de los pesos de la busqueda**/
+    public void agregarAvanceEnBusqueda(float pesoFosforo, float pesoCantUsos,  float pesoProductividad, int strikes) {
+        DecimalFormat df = new DecimalFormat();
+        df.setMaximumFractionDigits(6);
+        df.setMinimumFractionDigits(6);
+        float medidaFosforo = (this.fosforo / (Constantes.maximoIncumplimientoFosforo * this.areaTotal));
+        float medidaProductividad = (this.restriccionProductividadMinimaEstacion.cantIncumplimientos /Constantes.maximaCantidadIncumplimientoProductividadMinimaEstacion);
+        float medidaUsos = (this.restriccionUsosDistintos.cantIncumplimientos/ Constantes.maximoIncumplimientoUsosDistintos);
+
+        //ACA
+        PrintWriter writer = null;
+        try {
+            FileWriter fileWriter = new FileWriter("Busqueda.csv", true);
+            writer = new PrintWriter(fileWriter);
+            //Imprimo la primera fila que marca las estaciones
+            writer.println(Constantes.cantGrasp+" , "+Constantes.cantLS+" , "+strikes+" , "
+                    + df.format(this.evaluarFuncionObjetivo(1F, 1F,1F))+" , "
+                    + df.format(this.evaluarFuncionObjetivo(pesoFosforo, pesoProductividad,pesoCantUsos))+" , "
+                    + df.format(medidaFosforo) +" , " + pesoFosforo +" , "
+                    + df.format(medidaUsos)+" , "+pesoCantUsos+" , "
+                    + df.format(medidaProductividad)+" , "+pesoProductividad);
+            writer.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**Imprime los criterios utilizados en la funcion objetivo**/
+    public void imprimirCriterios() {
+        System.out.println("Fosforo: "+fosforo+" Productividad:"+restriccionProductividadMinimaEstacion.cantIncumplimientos
+                +" CantUsos: "+restriccionUsosDistintos.cantIncumplimientos);
+    }
 }
+
 
