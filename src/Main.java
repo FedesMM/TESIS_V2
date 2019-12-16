@@ -65,14 +65,16 @@ public class Main {
         //Constantes.definirPesosProblema(1f,1f,1f);
         //Constantes.pesosProblema.put("fosforo",1F);
 
-        Constantes.imprimirPesos(Constantes.pesosProblema);
-        Solucion a = Solucion.crearSolucion();
-        a.imprimirCriterios();
-        Solucion b = Solucion.crearSolucion();
-        b.imprimirCriterios();
-        Constantes.pesosProblema=Constantes.actualizarPesos(a, b, Constantes.pesosProblema);
-        Constantes.imprimirPesos(Constantes.pesosProblema);
-        datos = reader.nextInt();
+//        Constantes.imprimirPesos(Constantes.pesosProblema);
+//        Solucion a = Solucion.crearSolucion();
+//        System.out.print("Solucion Iniacial");
+//        a.imprimirCriterios();
+//        Solucion b = Solucion.crearSolucion();
+//        b.imprimirCriterios();
+//        Constantes.pesosProblema=Constantes.actualizarPesos(a, b, Constantes.pesosProblema);
+//        System.out.print("Solucion Siguiente");
+//        Constantes.imprimirPesos(Constantes.pesosProblema);
+//        datos = reader.nextInt();
 
 
         solucion=Main.grasp(cantidadSoluciones, true, false);
@@ -455,7 +457,7 @@ public class Main {
 
                 mejorSolucion = nuevaSolucion.clone();
                 if (verbose)System.out.println("GRASP-Mejor Solucion actual: "+mejorSolucion.evaluarFuncionObjetivo());
-            }else{
+            }else if (nuevaSolucion.evaluarFuncionObjetivo() > mejorSolucion.evaluarFuncionObjetivo()) {
                 //Actualizar pesosGRASP Opcion: No mejore
                 if (Constantes.actualizarPesosGRASPSinMejora){
                     Constantes.pesosGRASP=Constantes.actualizarPesos(mejorSolucion,nuevaSolucion,Constantes.pesosGRASP);
@@ -527,13 +529,15 @@ public class Main {
      * maxCantidadFI **/
     private static Solucion LocalSearch(Solucion solucion, boolean distanciaAlRio) {
         int strikes = 0;
-        float pesoFosforo = 1, pesoProductividad = 1, pesoCantUsos = 1;
         Solucion solucionOriginal = solucion.clone();
-        solucion.agregarAvanceEnBusqueda(pesoFosforo, pesoCantUsos,  pesoProductividad, strikes);
-
         //Inicializar pesosLS
         Constantes.pesosLS=Constantes.inicializarPesos();
-        System.out.print("GRASP "+Constantes.cantGrasp+" LS "+ Constantes.cantLS+ " iSoluciones:");
+
+        solucion.agregarAvanceEnBusqueda(strikes);
+        System.out.print("GRASP "+Constantes.cantGrasp+" LS "+ Constantes.cantLS+ " iSoluciones: ");
+
+
+
         //System.out.println("\tLS-Solucion Original:");
         //solucion.imprimirFuncionObjetivo();
 
@@ -543,50 +547,51 @@ public class Main {
                 || ((iSoluciones < Constantes.maxCantidadFI)&& (strikes<Constantes.strikesFI)); iSoluciones++) {
             //|| (strikes<Constantes.strikesFI); iSoluciones++) {
             Constantes.cantLS++;
-            System.out.print(iSoluciones+", ");
+            //System.out.print((iSoluciones+1)+", ");
             //System.out.println("\tLS-Iteracion: " + (iSoluciones + 1));
             //Busco una mejora
             solucion = Solucion.firstImprove(solucion, distanciaAlRio);
             //Actualizar pesosLS Opcion: Siempre
             if (Constantes.actualizarPesosLSSiempre){
                 Constantes.pesosLS=Constantes.actualizarPesos(solucionOriginal,solucion,Constantes.pesosLS);
-                solucion.agregarAvanceEnBusqueda(pesoFosforo, pesoCantUsos,  pesoProductividad,strikes);
+                //solucion.agregarAvanceEnBusqueda(strikes);
             }
             //Comparo valores de la mejora
-            if (solucionOriginal.evaluarFuncionObjetivo(pesoFosforo, pesoProductividad, pesoCantUsos)
-                    > solucion.evaluarFuncionObjetivo(pesoFosforo, pesoProductividad, pesoCantUsos)) {
-                //Obtube mejora
+            if (solucionOriginal.evaluarFuncionObjetivo() == solucion.evaluarFuncionObjetivo()){
+                //Si fallo el FI
+                strikes++;
+                //System.out.println("Empata");
+            }else if (solucionOriginal.evaluarFuncionObjetivo()
+                    > solucion.evaluarFuncionObjetivo()) {
+                //SI MEJORE
                 //Muestro la mejora y los pesos
                 //solucionOriginal.imprimirFuncionObjetivo(pesoFosforo, pesoProductividad, pesoCantUsos);
                 //solucion.imprimirFuncionObjetivo(pesoFosforo, pesoProductividad, pesoCantUsos);
-                //System.out.println();
+                //System.out.println("Mejora");
 
                 //Actualizar pesosLS Opcion: Si mejore
                 if (Constantes.actualizarPesosLSConMejora){
                     Constantes.pesosLS=Constantes.actualizarPesos(solucionOriginal,solucion,Constantes.pesosLS);
-                    solucion.agregarAvanceEnBusqueda(pesoFosforo, pesoCantUsos,  pesoProductividad,strikes);
+                    //solucion.agregarAvanceEnBusqueda(strikes);
                 }
-
-                //Actualizo pesos
-                pesoFosforo = Solucion.actualizarPesoFosforo(solucionOriginal, solucion, pesoFosforo);
-                pesoProductividad = Solucion.actualizarPesoProduccion(solucionOriginal, solucion, pesoProductividad);
-                pesoCantUsos = Solucion.actualizarPesoCantUsos(solucionOriginal, solucion, pesoCantUsos);
-
 
                 //Actualizo mi solucion original a la acutal
                 solucionOriginal=solucion.clone();
-
-
             } else {
-                //NO MEJORE
+                //SI NO MEJORE
+                //System.out.println("Empeora");
                 //Actualizar pesosLS Opcion: No mejore
                 if (Constantes.actualizarPesosLSSinMejora){
                     Constantes.pesosLS=Constantes.actualizarPesos(solucionOriginal,solucion,Constantes.pesosLS);
-                    solucion.agregarAvanceEnBusqueda(pesoFosforo, pesoCantUsos,  pesoProductividad,strikes);
+                    System.out.print("\n"+(iSoluciones+1)+")Actualizo Pesos\t solucionOriginal.fosoforo: "+ solucionOriginal.fosforo+
+                            " solucion.fosforo: "+solucion.fosforo);
+                    //solucion.agregarAvanceEnBusqueda(strikes);
                 }
                 //No obtuve FirstImprovement
                 strikes++;
             }
+
+            solucion.agregarAvanceEnBusqueda(strikes);
         }
 
         System.out.println();

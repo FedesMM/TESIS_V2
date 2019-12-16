@@ -36,19 +36,19 @@ public class Constantes {
     public static int minCantidadFI = 10;
     public static int maxCantidadFI = 15;
     public static int strikesFI = 3;
+    public static int intentosFI = 1000;
+
 
     //Parametros GRASP
     public static boolean actualizarPesosGRASPSiempre= false;
     public static boolean actualizarPesosGRASPConMejora= false;
     public static boolean actualizarPesosGRASPSinMejora= true;
 
+    //Parametros pesos
+    public static float pesoBase=1F;
+    public static float pesoMaximo=100F;
 
-    //TODO: Ver de eliminar estos pesos
-    public static float pesoIncumplimientoFosforo=1;
-    public static float pesoIncumplimientoProductividadMinimaEstacion= 1;
-    public static float pesoIncumplimientoUsosDistintos=1;
-
-    public static Map<String, Float> pesosProblema= new HashMap<>();
+    public static Map<String, Float> pesosProblema;
     static {
         pesosProblema = new HashMap<>();
         pesosProblema.put("fosforo", 1f);
@@ -61,7 +61,8 @@ public class Constantes {
         pesosGRASP.put("fosforo", 1F);
         pesosGRASP.put("productividad", 1F);
         pesosGRASP.put("cantidadUsos", 1F);
-    }public static Map<String, Float> pesosLS;
+    }
+    public static Map<String, Float> pesosLS;
     static {
         pesosLS = new HashMap<>();
         pesosLS.put("fosforo", 1F);
@@ -69,36 +70,35 @@ public class Constantes {
         pesosLS.put("cantidadUsos", 1F);
     }
     /**Aumenta el peso que se le asigna al Fosforo al momento de evaluar la funcion objetivo**/
-    //TODO: Parametriziar el aumento aumento como una variable de decision
-
-    public static void definirPesosProblema (Float fosforo, Float productividad, Float cantUsos, Map<String, Float> peso){
-        peso = new HashMap<>();
-        peso.put("fosforo", fosforo);
-        peso.put("productividad", productividad);
-        peso.put("cantidadUsos", cantUsos);
-    }
+    //TODO: Parametriziar el aumento como una variable de decision
 
 
+    /**Devuelve el peso total del Fosforo, compuesto del pesoProblema, pesoGRASP y peso LS**/
     public static float getPesoFosforoTotal() {
         return Constantes.pesosGRASP.get("fosforo")*Constantes.pesosLS.get("fosforo")*Constantes.pesosProblema.get("fosforo");
     }
+    /**Devuelve el peso total de la Productividad, compuesto del pesoProblema, pesoGRASP y peso LS**/
     public static float getPesoProductividadTotal() {
         return Constantes.pesosGRASP.get("productividad")*Constantes.pesosLS.get("productividad")*Constantes.pesosProblema.get("productividad");
     }
+    /**Devuelve el peso total de la Cantidad de Usos, compuesto del pesoProblema, pesoGRASP y peso LS**/
     public static float getPesoCantUsosTotal() {
         return Constantes.pesosGRASP.get("cantidadUsos")*Constantes.pesosLS.get("cantidadUsos")*Constantes.pesosProblema.get("cantidadUsos");
     }
 
+    //TODO: Parametrizar la variacion de pesos
+    /**Actualiza los pesos guardados en el map segun la comparacion entre solucionOriginal y solucion**/
     public static Map<String, Float> actualizarPesos(Solucion solucionOriginal, Solucion solucion, Map<String, Float> peso) {
         //FOSFORO
         if (solucionOriginal.fosforo<solucion.fosforo){
-            peso.put("fosforo", peso.get("fosforo")*1.1F);
+            peso.put("fosforo", Math.min(peso.get("fosforo")*1.1F, pesoMaximo));
         }else if (solucionOriginal.fosforo>solucion.fosforo){
-            peso.put("fosforo", peso.get("fosforo")/1.1F);
+            //peso.put("fosforo", peso.get("fosforo")/1.1F);
+            peso.put("fosforo", 1F);
         }
         //INCUMPLIMIENTO PRODUCTIVIDAD
         if (solucionOriginal.restriccionProductividadMinimaEstacion.cantIncumplimientos<solucion.restriccionProductividadMinimaEstacion.cantIncumplimientos){
-            peso.put("productividad", peso.get("productividad")*1.1F);
+            peso.put("productividad", Math.min(peso.get("productividad")*1.1F, pesoMaximo));
         }else if (solucionOriginal.restriccionProductividadMinimaEstacion.cantIncumplimientos>solucion.restriccionProductividadMinimaEstacion.cantIncumplimientos){
             peso.put("productividad", peso.get("productividad")/1.1F);
         }else if (solucionOriginal.restriccionProductividadMinimaEstacion.cantIncumplimientos==0){
@@ -106,7 +106,7 @@ public class Constantes {
         }
         //INCUMPLIMIENTO CANTUSOS
         if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos<solucion.restriccionUsosDistintos.cantIncumplimientos){
-            peso.put("cantidadUsos", peso.get("cantidadUsos")*1.1F);
+            peso.put("cantidadUsos", Math.min(peso.get("cantidadUsos")*1.1F, pesoMaximo));
         }else if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos>solucion.restriccionUsosDistintos.cantIncumplimientos){
             peso.put("cantidadUsos", peso.get("cantidadUsos")/1.1F);
         }else if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos==0) {
@@ -115,20 +115,22 @@ public class Constantes {
         return peso;
     }
 
+    /**Imprime los pesos de un map**/
     public static void imprimirPesos(Map<String, Float> peso) {
         System.out.println("pFosforo: "+ peso.get("fosforo")+" pProductividad: "+ peso.get("productividad")+" pCantUsos: "+peso.get("cantidadUsos"));
     }
 
+    /**Devuelve un map con los pesos en 1**/
     public static Map<String, Float> inicializarPesos() {
         Map<String, Float> peso = new HashMap<>();
-        peso.put("fosforo", 1F);
-        peso.put("productividad", 1F);
-        peso.put("cantidadUsos", 1F);
+        peso.put("fosforo", pesoBase);
+        peso.put("productividad", pesoBase);
+        peso.put("cantidadUsos", pesoBase);
         return peso;
     }
 
 
-        public static float mpp=1.0f;
+    public static float mpp=1.0f;
     public static float[]  restriccionProductividadProductorE = new float[]
             {mpp*1200,mpp*600,mpp*2100,mpp*2100,mpp*1200,mpp*600,mpp*2100,mpp*2100,mpp*1200,mpp*600,mpp*2100,mpp*2100,mpp*1200,mpp*600,mpp*2100,mpp*2100};
 
@@ -170,6 +172,7 @@ public class Constantes {
         Constantes.pixeles = Pixel.cargarPixelesDeProductor(nombreInstancia, numProductor);
         Constantes.usos = Uso.cargarUsos();
         Constantes.maximoIncumplimientoUsosDistintos = Constantes.cantEstaciones * Constantes.productoresActivos.size();
+        Constantes.maximaCantidadIncumplimientoProductividadMinimaEstacion=Constantes.cantEstaciones*Constantes.productoresActivos.size();
 
     }
 

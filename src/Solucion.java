@@ -138,11 +138,13 @@ public class Solucion {
         //ACA
         PrintWriter writer = null;
         try {
-            FileWriter fileWriter = new FileWriter("Busqueda.csv");
+            FileWriter fileWriter = new FileWriter("Busqueda.tsv");
             writer = new PrintWriter(fileWriter);
             //Imprimo la primera fila que marca las estaciones
-            writer.println("NumGRASP , NumLS , strikes, FuncionObjetivo Sin Pesos , FuncionObjetivo Con pesos , " +
-                    "Fosforo ,  Peso Fosforo, CantIncUsos, Peso CantIncUsos, CantIncProd, Peso CantIncProd");
+            writer.println("NumGRASP\tNumLS\tstrikes\tFuncionObjetivo Sin Pesos\tFuncionObjetivo Con Pesos\t" +
+                    "Fosforo\tPeso LS Fosforo\tPeso GRASP Fosforo\t" +
+                    "CantIncUsos\tPeso LS CantIncUsos\tPeso GRASP CantIncUsos\t" +
+                    "CantIncProd\tPeso LS CantIncProd\tPeso GRASP CantIncProd");
             writer.close();
 
         } catch (FileNotFoundException e) {
@@ -183,9 +185,9 @@ public class Solucion {
      * la cantIncumplimiento de Constantes.java **/
     public void imprimirFuncionObjetivo(){
         System.out.println("Funcion Objetivo: "+this.evaluarFuncionObjetivo());
-        System.out.println("\tFosforo modulado: "+Constantes.pesoIncumplimientoFosforo * (this.fosforo /(Constantes.maximoIncumplimientoFosforo*this.areaTotal)));
-        System.out.println("\tUsos Distintos modulado: "+ Constantes.pesoIncumplimientoUsosDistintos * (this.restriccionUsosDistintos.cantIncumplimientos/ Constantes.maximoIncumplimientoUsosDistintos));
-        System.out.println("\tProductividad Estacion modulado: "+(-1)*Constantes.pesoIncumplimientoProductividadMinimaEstacion * (this.restriccionProductividadMinimaEstacion.maximoDesviacion /Constantes.maximoIncumplimientoProductividadMinimaEstacion));
+        System.out.println("\tFosforo modulado: "+Constantes.getPesoFosforoTotal() * (this.fosforo /(Constantes.maximoIncumplimientoFosforo*this.areaTotal)));
+        System.out.println("\tUsos Distintos modulado: "+ Constantes.getPesoCantUsosTotal() * (this.restriccionUsosDistintos.cantIncumplimientos/ Constantes.maximoIncumplimientoUsosDistintos));
+        System.out.println("\tProductividad Estacion modulado: "+(-1)*Constantes.getPesoProductividadTotal()* (this.restriccionProductividadMinimaEstacion.maximoDesviacion /Constantes.maximoIncumplimientoProductividadMinimaEstacion));
     }
 
     /**Imprime el valor de la funcion objetivo de esta solucion segun los pesos dados**/
@@ -208,20 +210,20 @@ public class Solucion {
         return valor;
     }
 
-    /**Devuelve el valor de la funcion objetivo de la solucion segun los pesos dados, tomando los
-     * pesos de Constantes.java**/
+    /**Devuelve el valor de la funcion objetivo de la solucion segun los pesos almacenados en Constantes.java
+     * contempla los pesos del problema, GRASP y LS**/
     public float evaluarFuncionObjetivo(){
         float valor=0;
-        valor= Constantes.pesoIncumplimientoFosforo * (this.fosforo /(Constantes.maximoIncumplimientoFosforo*this.areaTotal));
-        valor += Constantes.pesoIncumplimientoProductividadMinimaEstacion * (this.restriccionProductividadMinimaEstacion.cantIncumplimientos /Constantes.maximaCantidadIncumplimientoProductividadMinimaEstacion);
-        valor +=  Constantes.pesoIncumplimientoUsosDistintos * (this.restriccionUsosDistintos.cantIncumplimientos/ Constantes.maximoIncumplimientoUsosDistintos);
+        valor= Constantes.getPesoFosforoTotal() * (this.fosforo /(Constantes.maximoIncumplimientoFosforo*this.areaTotal));
+        valor += Constantes.getPesoProductividadTotal() * (this.restriccionProductividadMinimaEstacion.cantIncumplimientos /Constantes.maximaCantidadIncumplimientoProductividadMinimaEstacion);
+        valor +=  Constantes.getPesoCantUsosTotal() * (this.restriccionUsosDistintos.cantIncumplimientos/ Constantes.maximoIncumplimientoUsosDistintos);
         return valor;
     }
 
     /**Devuelve el valor de fosforo esportado por esta solucion, modulado por  el maximo fosforo posible y multiplicado
      * por el peso ambos definidios en Constantes.java**/
     public float evaluarFosforoModulado(){
-        return Constantes.pesoIncumplimientoFosforo * (this.fosforo /(Constantes.maximoIncumplimientoFosforo*this.areaTotal));
+        return Constantes.getPesoFosforoTotal() * (this.fosforo /(Constantes.maximoIncumplimientoFosforo*this.areaTotal));
     }
 
     /**Devuelve la media del incumplimiento de productividad, modulado por  el maximo incumplimiento posible y multiplicado
@@ -429,11 +431,8 @@ public class Solucion {
     public static Solucion firstImprove(Solucion solucion, boolean distanciaAlRio){
         Solucion respaldoSolucion=solucion.clone();
         int pixelRandom;
-        float pesoFosforo= Constantes.getPesoFosforoTotal();
-        float pesoProductividad=  Constantes.getPesoProductividadTotal();
-        float pesoCantUsos= Constantes.getPesoCantUsosTotal();
 
-        for (int intentos = 0; intentos < Constantes.cantPixeles ; intentos++) {
+        for (int intentos = 0; intentos < Constantes.intentosFI ; intentos++) {
             //Sorteo cual cambiar
             pixelRandom= Constantes.uniforme.nextInt(Constantes.cantPixeles-1);
             //Cambio el pixel sorteado
@@ -456,7 +455,8 @@ public class Solucion {
             }
 
             //En caso de que me sirva lo devuelvo
-            if (solucion.evaluarFuncionObjetivo(pesoFosforo,pesoProductividad,pesoCantUsos)< respaldoSolucion.evaluarFuncionObjetivo(pesoFosforo,pesoProductividad,pesoCantUsos)){
+            if (solucion.evaluarFuncionObjetivo()
+                    < respaldoSolucion.evaluarFuncionObjetivo()){
                 //System.out.println("\t\tFI-Exito, con cantidad de fallos: "+fallos);
                 return solucion;
 
@@ -1759,7 +1759,7 @@ public class Solucion {
     }
 
     /**Agrega una entra al log de los pesos de la busqueda**/
-    public void agregarAvanceEnBusqueda(float pesoFosforo, float pesoCantUsos,  float pesoProductividad, int strikes) {
+    public void agregarAvanceEnBusqueda(int strikes) {
         DecimalFormat df = new DecimalFormat();
         df.setMaximumFractionDigits(6);
         df.setMinimumFractionDigits(6);
@@ -1770,15 +1770,15 @@ public class Solucion {
         //ACA
         PrintWriter writer = null;
         try {
-            FileWriter fileWriter = new FileWriter("Busqueda.csv", true);
+            FileWriter fileWriter = new FileWriter("Busqueda.tsv", true);
             writer = new PrintWriter(fileWriter);
             //Imprimo la primera fila que marca las estaciones
-            writer.println(Constantes.cantGrasp+" , "+Constantes.cantLS+" , "+strikes+" , "
-                    + df.format(this.evaluarFuncionObjetivo(1F, 1F,1F))+" , "
-                    + df.format(this.evaluarFuncionObjetivo(pesoFosforo, pesoProductividad,pesoCantUsos))+" , "
-                    + df.format(medidaFosforo) +" , " + pesoFosforo +" , "
-                    + df.format(medidaUsos)+" , "+pesoCantUsos+" , "
-                    + df.format(medidaProductividad)+" , "+pesoProductividad);
+            writer.println(Constantes.cantGrasp+"\t"+Constantes.cantLS+"\t"+strikes+"\t"
+                    + df.format(this.evaluarFuncionObjetivo(1F, 1F,1F))+"\t"
+                    + df.format(this.evaluarFuncionObjetivo())+"\t"
+                    + df.format(medidaFosforo) +"\t"+ Constantes.pesosLS.get("fosforo") +"\t"+ Constantes.pesosGRASP.get("fosforo")+"\t"
+                    + df.format(medidaUsos)+"\t"+ Constantes.pesosLS.get("cantidadUsos") +"\t"+ Constantes.pesosGRASP.get("cantidadUsos")+"\t"
+                    + df.format(medidaProductividad)+"\t"+ Constantes.pesosLS.get("productividad") +"\t"+ Constantes.pesosGRASP.get("productividad")+"\t");
             writer.close();
 
         } catch (FileNotFoundException e) {
