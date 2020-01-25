@@ -33,10 +33,11 @@ public class Main {
 
 
         //GENERADOR DE .DAT
-        Main.resolverProductor();
+        //Main.resolverProductor();
 
         //Main.resolverProductores();
-        //Main.generarMejorSolucion();
+
+        Main.generarMejorSolucion();
         //Main.testCargarUsos();
         //Main.testInstancias();
         //Main.testFactibilizarProductividad();
@@ -93,7 +94,7 @@ public class Main {
 
         for (int iProductores = 2; iProductores <=42 ; iProductores++) {
             Constantes.pixeles=Pixel.cargarPixelesDeProductor("Instancias/productores/productor"+iProductores+".in",iProductores);
-            solucion=Main.grasp(100000, true, false);
+            solucion=Main.grasp(10000, true, false);
 
             solucion.crearArchivoPlanificacion("soluciones/productor"+iProductores+".out");
             System.out.println("Mejor solucion:");
@@ -558,7 +559,7 @@ public class Main {
             }
             //Comparo valores de la mejora
             if (solucionOriginal.evaluarFuncionObjetivo() == solucion.evaluarFuncionObjetivo()){
-                //Si fallo el FI
+                //Si EMPATE
                 strikes++;
                 //System.out.println("Empata");
             }else if (solucionOriginal.evaluarFuncionObjetivo()
@@ -583,8 +584,8 @@ public class Main {
                 //Actualizar pesosLS Opcion: No mejore
                 if (Constantes.actualizarPesosLSSinMejora){
                     Constantes.pesosLS=Constantes.actualizarPesos(solucionOriginal,solucion,Constantes.pesosLS);
-                    System.out.print("\n"+(iSoluciones+1)+")Actualizo Pesos\t solucionOriginal.fosoforo: "+ solucionOriginal.fosforo+
-                            " solucion.fosforo: "+solucion.fosforo);
+                    //System.out.print("\n"+(iSoluciones+1)+")Actualizo Pesos\t solucionOriginal.fosoforo: "+ solucionOriginal.fosforo+
+                    //" solucion.fosforo: "+solucion.fosforo);
                     //solucion.agregarAvanceEnBusqueda(strikes);
                 }
                 //No obtuve FirstImprovement
@@ -962,6 +963,12 @@ public class Main {
         System.out.println("\tFosforo: " + Constantes.mejorCantIncumplimientoUsos.fosforo);
         Constantes.mejorCantIncumplimientoUsos.imprimirRestriccionProductividadMinimaEstacion();
         Constantes.mejorCantIncumplimientoUsos.imprimirRestriccionUsosDistintos();
+
+        final DualAxisProductividadFosforo grafica = new DualAxisProductividadFosforo("Dual Axis Demo",
+                solucion.crearDataSetDualAxisProductividad(),  solucion.crearDataSetDualAxisFosforo());
+        grafica.pack();
+        //RefineryUtilities.centerFrameOnScreen(demo);
+        grafica.setVisible(true);
 
 
         reader.close();

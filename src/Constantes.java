@@ -45,8 +45,10 @@ public class Constantes {
     public static boolean actualizarPesosGRASPSinMejora= true;
 
     //Parametros pesos
+    public static float pesoMinimo=0.01F;
     public static float pesoBase=1F;
     public static float pesoMaximo=100F;
+
 
     public static Map<String, Float> pesosProblema;
     static {
@@ -94,23 +96,23 @@ public class Constantes {
             peso.put("fosforo", Math.min(peso.get("fosforo")*1.1F, pesoMaximo));
         }else if (solucionOriginal.fosforo>solucion.fosforo){
             //peso.put("fosforo", peso.get("fosforo")/1.1F);
-            peso.put("fosforo", 1F);
+            peso.put("fosforo", pesoBase);
         }
         //INCUMPLIMIENTO PRODUCTIVIDAD
         if (solucionOriginal.restriccionProductividadMinimaEstacion.cantIncumplimientos<solucion.restriccionProductividadMinimaEstacion.cantIncumplimientos){
             peso.put("productividad", Math.min(peso.get("productividad")*1.1F, pesoMaximo));
         }else if (solucionOriginal.restriccionProductividadMinimaEstacion.cantIncumplimientos>solucion.restriccionProductividadMinimaEstacion.cantIncumplimientos){
-            peso.put("productividad", peso.get("productividad")/1.1F);
+            peso.put("productividad", Math.max(peso.get("productividad")/1.1F, pesoMinimo));
         }else if (solucionOriginal.restriccionProductividadMinimaEstacion.cantIncumplimientos==0){
-            peso.put("productividad", 1F);
+            peso.put("productividad", pesoBase);
         }
         //INCUMPLIMIENTO CANTUSOS
         if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos<solucion.restriccionUsosDistintos.cantIncumplimientos){
             peso.put("cantidadUsos", Math.min(peso.get("cantidadUsos")*1.1F, pesoMaximo));
         }else if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos>solucion.restriccionUsosDistintos.cantIncumplimientos){
-            peso.put("cantidadUsos", peso.get("cantidadUsos")/1.1F);
+            peso.put("cantidadUsos", Math.max(peso.get("cantidadUsos")/1.1F, pesoMinimo));
         }else if (solucionOriginal.restriccionUsosDistintos.cantIncumplimientos==0) {
-            peso.put("cantidadUsos", 1F);
+            peso.put("cantidadUsos", pesoBase);
         }
         return peso;
     }

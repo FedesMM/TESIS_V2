@@ -1,12 +1,23 @@
-
-
-
 import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 
+import java.awt.*;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.text.DecimalFormat;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.*;
+import org.jfree.chart.labels.StandardCategoryToolTipGenerator;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.DatasetRenderingOrder;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.LineAndShapeRenderer;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 
 import static java.lang.Math.min;
 
@@ -1795,6 +1806,52 @@ public class Solucion {
         System.out.println("Fosforo: "+fosforo+" Productividad:"+restriccionProductividadMinimaEstacion.cantIncumplimientos
                 +" CantUsos: "+restriccionUsosDistintos.cantIncumplimientos);
     }
+
+
+    public CategoryDataset crearDataSetDualAxisProductividad() {
+        final String serie="Productividad de materia seca (kg MS/ ha)";
+        // create the dataset...
+        final DefaultCategoryDataset dataSet = new DefaultCategoryDataset();
+        for (int iEstacion = 0; iEstacion < Constantes.cantEstaciones; iEstacion++) {
+            final String estacion= Integer.toString(iEstacion);
+            dataSet.addValue(getProductividadPorEstacion(iEstacion), serie, estacion);
+        }
+        return  dataSet;
+
+    }
+
+    /**Imprime la productividad (materia seca (kg MS ha -1 )) alcanzada en una estacion **/
+    public float getProductividadPorEstacion(int iEstacion){
+        float productivdadEstacion=0;
+        //Imprime la productividad (dividida por su area total) de cada productor en cada estacion
+        for (int productor:Constantes.productoresActivos) {
+            productivdadEstacion+=this.productivdadProductores[productor][iEstacion];
+        }
+        return productivdadEstacion;
+    }
+
+    public CategoryDataset crearDataSetDualAxisFosforo() {
+        final String serie="Fósforo (kg PT /ha)";
+        // create the dataset...
+        final DefaultCategoryDataset dataSet = new DefaultCategoryDataset();
+        for (int iEstacion = 0; iEstacion < Constantes.cantEstaciones; iEstacion++) {
+            final String estacion= Integer.toString(iEstacion);
+            dataSet.addValue(getFosforoPorEstacion(iEstacion), serie, estacion);
+        }
+        return  dataSet;
+
+    }
+
+    /**Imprime la exportacion de fosforo (fósforo (kg PT ha -1 )) alcanzada en una estacion **/
+    public float getFosforoPorEstacion(int iEstacion){
+        float fosforoEstacion=0;
+        //Imprime la productividad (dividida por su area total) de cada productor en cada estacion
+        for (int productor:Constantes.productoresActivos) {
+            fosforoEstacion+=this.fosforoProductores[productor][iEstacion];
+        }
+        return fosforoEstacion;
+    }
+
 }
 
 
