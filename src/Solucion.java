@@ -1808,6 +1808,37 @@ public class Solucion {
     }
 
 
+    public CategoryDataset crearDatasetStakedBarSuperficieDeUsoPorEstacion() {
+
+        final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        float[][] superficies = this.superfieciesDeUsosPorEstacion();
+        String[] usos = new String[]{"Partido 1", "Partido 2", "Partido 3", "Partido 4", "Partido 5", "Partido 6"};
+        String[] estaciones = new String[]{"Equipo 1", "Equipo 2"};
+
+        //return DatasetUtilities.createCategoryDataset("Team ", "Match", data);
+
+        for (int iUsos = 1; iUsos < Constantes.cantUsos; iUsos++) {
+            for (int iEstaciones = 0; iEstaciones < Constantes.cantEstaciones; iEstaciones++) {
+                //TODO: Crar una funcion o un arreglo que tenga los nombres de las estaciones.
+                dataset.addValue( superficies[iEstaciones][iUsos], Constantes.usos[iUsos].nombre,
+                        Integer.toString(iEstaciones+1));
+            }
+        }
+        return dataset;
+
+    }
+
+    /**Imprime la productividad (materia seca (kg MS ha -1 )) alcanzada en una estacion **/
+    public float[][] superfieciesDeUsosPorEstacion(){
+        float [][] superficies= new float[Constantes.cantEstaciones][Constantes.cantUsos];
+        for (int iEstacion = 0; iEstacion < Constantes.cantEstaciones; iEstacion++) {
+            for (int iPixel = 0; iPixel < Constantes.cantUsos; iPixel++) {
+                superficies[iEstacion][this.getUsoPlantado(iEstacion,iPixel)]+=Constantes.pixeles[iPixel].superficie;
+            }
+        }
+        return superficies;
+    }
+
     public CategoryDataset crearDataSetDualAxisProductividad() {
         final String serie="Productividad de materia seca (kg MS/ ha)";
         // create the dataset...
@@ -1850,6 +1881,13 @@ public class Solucion {
             fosforoEstacion+=this.fosforoProductores[productor][iEstacion];
         }
         return fosforoEstacion;
+    }
+
+    public int getUsoPlantado(int estacion, int pixel){
+        return this.matriz[pixel][estacion] / 100;
+    }
+    public int getEstacionDeUsoPlantado(int estacion, int pixel){
+        return this.matriz[pixel][estacion] % 100;
     }
 
 }

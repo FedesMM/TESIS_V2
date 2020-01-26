@@ -964,11 +964,17 @@ public class Main {
         Constantes.mejorCantIncumplimientoUsos.imprimirRestriccionProductividadMinimaEstacion();
         Constantes.mejorCantIncumplimientoUsos.imprimirRestriccionUsosDistintos();
 
-        final DualAxisProductividadFosforo grafica = new DualAxisProductividadFosforo("Dual Axis Demo",
+        final DualAxisProductividadFosforo graficaDualAxis = new DualAxisProductividadFosforo("Dual Axis Demo",
                 solucion.crearDataSetDualAxisProductividad(),  solucion.crearDataSetDualAxisFosforo());
-        grafica.pack();
+        graficaDualAxis.pack();
         //RefineryUtilities.centerFrameOnScreen(demo);
-        grafica.setVisible(true);
+        graficaDualAxis.setVisible(true);
+
+        final StackBarChartSuperficieDeUsosPorEstacion graficaStakBar = new StackBarChartSuperficieDeUsosPorEstacion
+                ("StackBar", solucion.crearDatasetStakedBarSuperficieDeUsoPorEstacion());
+        graficaStakBar.pack();
+        //RefineryUtilities.centerFrameOnScreen(demo);
+        graficaStakBar.setVisible(true);
 
 
         reader.close();
