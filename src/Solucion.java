@@ -501,6 +501,7 @@ public class Solucion {
         //System.out.println("\tme faltan : "+usoYDuracion[1]);
         //Completo las estaciones que me faltan
         while(usoYDuracion[1]>0){
+
             usoACargar=usoYDuracion[0];
             //Calculo la estacion del uso que voy a cargar
             estacionesDeEsteUso=Constantes.usos[usoACargar].duracionEstaciones-usoYDuracion[1];
@@ -518,6 +519,7 @@ public class Solucion {
             System.out.print(" y "+ Constantes.usos[usoACargar].productividad[estacionesDeEsteUso]);
             System.out.println(" Sumando: "+ Constantes.pixeles[iPixel].superficie * Constantes.usos[usoACargar].productividad[estacionesDeEsteUso]);
             */
+
             //Actualizo la productividad del productor due;o del pixel segun la superficie del pixel y la productividad del uso para la estacion del uso
             this.productivdadProductores[Constantes.pixeles[iPixel].productor][iEstacion] +=
                     Constantes.pixeles[iPixel].superficie * Constantes.usos[usoACargar].productividad[estacionesDeEsteUso];
@@ -529,6 +531,7 @@ public class Solucion {
             //        "\t Productor:"+ Constantes.pixeles[iPixel].productor+ "\t Estacion:"+iEstacion);
             //Actualizo lo que aporta el uso al fosforo total en esta estacion
             this.fosforo+=(Constantes.usos[usoACargar].fosforoEstacion[estacionesDeEsteUso]*Constantes.pixeles[iPixel].superficie);
+
             //Aumento el iterador de iEstacion
             iEstacion++;
             //Reduzco la duracion

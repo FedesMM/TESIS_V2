@@ -7,15 +7,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
 
 public class Pixel {
     int numero, productor, potrero, id;
     float[] cordenada = new float [2];
     float superficie, distanciaAlRio;
     String usoOriginal;
-
-    //TODO: Seguir con comentarios desde aca
 
     //Esto no se va en la solucion
     // int[] decisiones = new int[Constantes.cantEstaciones]; //Se guarda el Uso*100+el numero de estacion de ese uso
@@ -31,7 +29,35 @@ public class Pixel {
         this.usoOriginal = usoOriginal;
     }
 
-    /**Imprime en pantalla todos los datos del pixel**/
+    public static Pixel getPixel(List<Pixel> pixeles, int numero ) {
+        int iter = 0;
+        while(iter < pixeles.size()) {
+            if (pixeles.get(iter).numero == numero) {
+                return pixeles.get(iter);
+            } else {
+                iter++;
+            }
+        }
+        return null;
+    }
+
+    public static List<Pixel> getPixelesFromNumeros(List<Integer> indexes, List<Pixel> pixeles) {
+        List<Pixel> res = new ArrayList<>();
+        for (int i = 0; i < indexes.size(); i++) {
+            boolean found = false;
+            int iter = 0;
+            while (!found && iter < pixeles.size()) {
+                if (indexes.get(i) == pixeles.get(i).numero) {
+                    found = true;
+                    res.add(pixeles.get(i));
+                } else {
+                    i++;
+                }
+            }
+        }
+        return res;
+    }
+    /**Imprime en pantalla todos los datos del pixel**/	
     public void imprimirPixel(){
             System.out.printf("\t("+this.numero+","+this.id+ ","+this.productor+","+this.potrero+
                     ", {"+this.cordenada[0]+","+this.cordenada[1]+"},"+

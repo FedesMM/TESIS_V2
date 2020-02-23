@@ -1,9 +1,8 @@
 import com.sun.istack.internal.NotNull;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,8 +14,14 @@ public class Uso {
     float[] productividad, fosforoEstacion;
     List<Integer> siguientesUsos;
     String nombre;
+    Date fechaAlta;
+    boolean archivado = false;
 
-    /**Constructor de la clase**/
+    public Uso() {
+
+    }
+
+/**Constructor de la clase**/
     public Uso(int nUso, int dEstaciones, int primeraEstacion, float fosforo, float prod[], float fosforoEstacion[], String nombre, List<Integer> sigUsos) {
         this.numUso = nUso;
         this.duracionEstaciones = dEstaciones;
@@ -31,7 +36,190 @@ public class Uso {
 
         this.nombre = nombre;
         this.siguientesUsos = sigUsos;
+        this.fechaAlta = new Date();
     }
+
+    public static Uso emptyUso(List<Uso> usos) { // valores por defecto al crear un nuevo uso
+        Uso res = new Uso();
+        res.numUso = Uso.getNumeroUso(usos);
+        res.nombre = "";
+        res.duracionEstaciones = 16;
+        res.primeraEstacion = ConstantesUI.OTONIO;
+        res.fosforoEstacion = new float[res.duracionEstaciones];
+        res.productividad = new float[res.duracionEstaciones];
+        res.fosforo = 0;
+        res.productividadTotal = 0;
+        res.siguientesUsos = new ArrayList<>();
+        return res;
+    }
+
+    public static String[] getAtributosFromTable() {
+        return new String[] {"Número", "Nombre", "Id Ext", "Duracion", "Creación", "Ampliar", "Duplicar", "Borrar"};
+    }
+
+    public static int cantUsos(List<Uso> uso, boolean showArchivados) {
+        if (showArchivados) return uso.size();
+        int size = 0;
+        for(Uso u: uso) {
+            if (!u.archivado) {
+                size++;
+            }
+        }
+        return size;
+    }
+
+    public static  String[] getDatosSiguientesUsos(List<Uso> usos) {
+        String[] lista = new String[usos.size()];
+        for (int i = 0; i < usos.size(); i++) {
+            lista[i] = usos.get(i).toStringArraySigUso();
+        }
+        return lista;
+    }
+
+    public void print() {
+        System.out.println("Uso : "+nombre+", nombre: "+ nombre + ", duracion: "+duracionEstaciones+", primer estacion "+primeraEstacion);
+        System.out.print("fosforo estacion: ");
+        for (float aFosforoEstacion : fosforoEstacion) System.out.print(aFosforoEstacion + ", ");
+        System.out.println();
+        System.out.print("prod estacion: ");
+        for (float aProductividad : productividad) System.out.print(aProductividad + ", ");
+        System.out.println();
+        System.out.print("siguientes usos: ");
+        for (Integer siguientesUso : siguientesUsos) System.out.print(siguientesUso + ", ");
+        System.out.println();
+    }
+
+    public static int getNumeroUso(List<Uso> usos) {
+        int num = 0;
+        int iter = 0;
+        while (iter < usos.size()) {
+            if (usos.get(iter).numUso == num) {
+                num++;
+                iter = 0;
+            } else {
+                iter++;
+            }
+        }
+        return num;
+    }
+
+    /* Copia un uso, dandole un nuevo numero, y asignandole el nombre pasado como parametro */
+    public Uso copy(List<Uso> usos, String nombre) {
+        int num = Uso.getNumeroUso(usos);
+        ArrayList<Integer> copy = new ArrayList<>(siguientesUsos);
+        float[] prod = productividad.clone();
+        float[] fos = fosforoEstacion.clone();
+        return new Uso(num, duracionEstaciones, primeraEstacion, fosforo, prod, fos, nombre, copy);
+    }
+
+    /* Clona un uso, mismo id, mismo nombre, etc */
+    public Uso clone() {
+        ArrayList<Integer> copy = new ArrayList<>(siguientesUsos);
+        float[] prod = productividad.clone();
+        float[] fos = fosforoEstacion.clone();
+        return new Uso(numUso, duracionEstaciones, primeraEstacion, fosforo, prod, fos, nombre, copy);
+    }
+
+    public static List<Uso> cloneList(List<Uso> lista) {
+        List<Uso> result = new ArrayList<>();
+        for (Uso uso: lista) {
+            result.add(uso.clone());
+        }
+        return result;
+    }
+
+    /* Retorna los indices de los usos que aparecen en la lista seleccionados, respecto a la lista todos*/
+    public static List<Integer> getIndexesFromListUsos(List<Uso> todos, @NotNull List<Uso> seleccionados) {
+        List<Integer> indexes = new ArrayList<>();
+        for (int i = 0; i < seleccionados.size(); i++) {
+            int index = Uso.getIndex(todos, seleccionados.get(i).numUso);
+            indexes.add(index);
+        }
+        return indexes;
+    }
+
+    public static List<Integer> getIndexesFromListNumbers(List<Uso> todos, List<Integer> seleccionados) {
+        List<Integer> indexes = new ArrayList<>();
+        for (int i = 0; i < seleccionados.size(); i++) {
+            int index = Uso.getIndex(todos, seleccionados.get(i));
+            indexes.add(index);
+        }
+        return indexes;
+    }
+
+    public String getNombreCopia() {
+        return "copia de " + nombre;
+    }
+/*
+    public Object[] toObjectArray(List<Problema> problemas, List<Resultado> resultados) {
+        String borrar = "Borrar";
+        if (archivado) {
+            borrar = "Desarchivar";
+        } else if (!Problema.getProblemasWithUso(problemas, numUso).equals("") || !Resultado.getResultadosWithUso(resultados, numUso).equals("")) {
+            borrar = "Archivar";
+        }
+        return new Object[]{numUso, nombre, nombre, duracionEstaciones, Utils.getFormatedDate(fechaAlta), "Ampliar", "Duplicar", borrar};
+    }
+*/
+    public String toStringArraySigUso() {
+        return nombre + " (" + numUso + ") (" + nombre + ")";
+    }
+
+    public String getTitulo() {
+        return "Uso " + nombre + ", (" + numUso + ")";
+    }
+
+    public static Uso getUsoByIndex(List<Uso> usos, int index, boolean mostrarArchivados) {
+        int iter = 0;
+        int archivados = 0;
+        while(iter < usos.size()) {
+            if (!mostrarArchivados && usos.get(iter).archivado) {
+                iter++;
+                archivados++;
+            } else if (iter == index + archivados) {
+                return usos.get(iter);
+            } else {
+                iter++;
+            }
+        }
+        return null;
+    }
+
+    public static int getIndex(List<Uso> usos, int numUso) {
+        int iter = 0;
+        while(iter < usos.size()) {
+            if (usos.get(iter).numUso == numUso) {
+                return iter;
+            } else {
+                iter++;
+            }
+        }
+        return -1;
+    }
+
+    public void agregarSiguienteUso(int numUso) {
+        int iter = 0;
+        while (iter < siguientesUsos.size()) {
+            if (siguientesUsos.get(iter) == numUso) {
+                return;
+            } else {
+                iter++;
+            }
+        }
+        siguientesUsos.add(numUso);
+    }
+
+    public void quitarSiguienteUso(int numUso) {
+        int iter = 0;
+        while (iter < siguientesUsos.size()) {
+            if (siguientesUsos.get(iter) == numUso) {
+                siguientesUsos.remove(iter);
+            } else {
+                iter++;
+            }
+        }
+    }
+    
     /**Devuelve un siguiente uso aleatorio que pueda seguir al usoOriginal**/
     public static int siguienteUsoUniforme(int usoOriginal) {
         //Devuelve la posicion en el array de usos del siguiente uso
@@ -44,6 +232,7 @@ public class Uso {
         int siguienteUso = Constantes.usos[usoOriginal].siguientesUsos.get(numeroUniforme);//Posicion en el array coincide con el numero de Uso
         return siguienteUso;
     }
+
     /**Devuelve un siguiente uso aleatorio, priorizando los que exportan menos fosforo, que pueda seguir al usoOriginal**/
     public static int siguienteUsoRuletaFosforo(int usoOriginal) {
         //Devuelve la posicion en el array de usos del siguiente uso
@@ -73,6 +262,7 @@ public class Uso {
         //System.out.println("\t\tSiguiente Uso: "+numeroUniforme);
         return siguienteUso;
     }
+
     /**Devuelve un siguiente uso aleatorio, priorizando los que tengan mayor produccion, que pueda seguir al uso Original**/
     public static int siguienteUsoRuletaProduccion(int usoOriginal) {
         //Devuelve la posicion en el array de usos del siguiente uso
@@ -102,6 +292,7 @@ public class Uso {
         //System.out.println("\t\tSiguiente Uso: "+numeroUniforme);
         return siguienteUso;
     }
+
     /**Devuelve un siguiente uso aleatorio, sorteando por Fosforo e intentando no Incumplir con la restriccion de Cantusos**/
     public static int siguienteUsoRuletaFosforoCumpleCantUsos(int usoOriginal, @NotNull ArrayList<Integer> usosDelProductorEstaEstacion, int iProductor) {
         List<Integer> listaDeCandidatos = new ArrayList<>();
@@ -152,6 +343,7 @@ public class Uso {
             return siguienteUso;
         }
     }
+
     /**Devuelve un siguiente uso aleatorio, sorteando por Profuctividad e intentando no Incumplir con la restriccion de Cantusos**/
     public static int siguienteUsoRuletaProduccionCumpleCantUsos(int usoOriginal, @NotNull ArrayList<Integer> usosDelProductorEstaEstacion, int iProductor) {
         List<Integer> listaDeCandidatos = new ArrayList<>();
@@ -202,6 +394,7 @@ public class Uso {
             return siguienteUso;
         }
     }
+
     /**Carga los usos desde archivos uso[NumeroUso].in**/
     public static void cargarUsosDesdeArchivos() {
         //System.out.println("CantUsos: "+Constantes.cantUsos);

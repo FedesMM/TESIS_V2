@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import static java.lang.Integer.min;
@@ -9,7 +10,32 @@ public class Productor {
     float[] restriccionProduccionEstacion;
     List<Integer> pixelesDelProductor;
     float areaTotal;
-    // TODO: agregar nombre de productor
+    String nombre;
+    Date fechaCreacion;
+
+    public static Productor getProductor(int numeroProductor, List<Productor> productores) {
+        int iter = 0;
+        while(iter < productores.size()) {
+            if (productores.get(iter).numeroProductor == numeroProductor) {
+                return productores.get(iter);
+            } else {
+                iter++;
+            }
+        }
+        return null;
+    }
+
+    public static String[] titlesToStringArray() {
+        return new String[]{"Nombre", "Número", "Id Externo", "# Pixeles", "Ampliar", "Pixeles"};
+    }
+
+    public Object[] toObjectArray() {
+        return new Object[]{numeroProductor, numeroProductor, numeroProductor, pixelesDelProductor.size(), "Ver Pixeles"};
+    }
+
+    public static String[] toObjectArrayEstaciones() {
+        return new String[]{"Estación 1", "Estación 2", "Estación 3", "Estación 4"};
+    }
 
     /**Devuelve el minimo entre la minima cantidad de usos y la cantidad de pixeles del productor**/
     public int getMinCantUsos(){
@@ -56,9 +82,11 @@ public class Productor {
         //El productor cero tiene todos los pixeles pares
         float[] restriccionProductorE0= new float[] {1200,600,2100,2100,1200,600,2100,2100,1200,600,2100,2100};
         float[] restriccionProductorA0= new float[] {6000,6000,6000};
+//        productores[0]= new Productor(0,restriccionProductorE0, restriccionProductorA0,Arrays.asList(2,4));
         //El productor uno tiene todos los pixeles inpares
         float[] restriccionProductorE1= new float[] {1200,600,2100,2100,1200,600,2100,2100,1200,600,2100,2100};
         float[] restriccionProductorA1= new float[] {6000,6000,6000};
+//        productores[1]= new Productor(0,restriccionProductorE1, restriccionProductorA1,Arrays.asList(1,3));
         return productores;
     }
 
